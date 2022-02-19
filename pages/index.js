@@ -42,7 +42,7 @@ export default function Home() {
         <button onClick={() => setVisible(true)}>Scan</button>
         {visible && (
           <BarcodeReader
-            facingMode="user"
+            facingMode="environment"
             onUpdate={async (err, result) => {
               console.log("literally anything");
               if (!err) {
