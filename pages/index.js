@@ -12,6 +12,7 @@ export default function Home() {
   const [data, setData] = useState("No Result");
   const [visible, setVisible] = useState(false);
   const [album, setAlbum] = useState({ title: "No Album Found", src: "" });
+  const [camera, setCamera] = useState("environment");
 
   const [list, setList] = useState([]);
 
@@ -40,9 +41,16 @@ export default function Home() {
       <main>
         <h1>Scan a Record or CD Barcode</h1>
         <button onClick={() => setVisible(true)}>Scan</button>
+        <button
+          onClick={() =>
+            setCamera(camera === "environment" ? "user" : "environment")
+          }
+        >
+          Switch Camera
+        </button>
         {visible && (
           <BarcodeReader
-            facingMode="environment"
+            facingMode={camera}
             onUpdate={async (err, result) => {
               console.log("literally anything");
               if (!err) {
