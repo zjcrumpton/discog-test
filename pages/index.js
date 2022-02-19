@@ -1,6 +1,35 @@
-import Head from 'next/head'
+import Head from "next/head";
+import { useState } from "react";
+import axios from "axios";
+
+import dynamic from "next/dynamic";
+
+const BarcodeReader = dynamic(() => import("react-qr-barcode-scanner"), {
+  ssr: false,
+});
 
 export default function Home() {
+  const [data, setData] = useState("No Result");
+  const [visible, setVisible] = useState(false);
+  const [album, setAlbum] = useState({ title: "No Album Found", src: "" });
+
+  const [list, setList] = useState([]);
+
+  const handleScan = (data, error) => {
+    if (data) {
+      console.log(data);
+      setData(data);
+    }
+
+    if (!error) {
+      setVisible(false);
+    }
+  };
+
+  const handleError = (err) => {
+    console.log(err);
+  };
+
   return (
     <div className="container">
       <Head>
@@ -9,55 +38,50 @@ export default function Home() {
       </Head>
 
       <main>
-        <h1 className="title">
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+        <h1>Scan a Record or CD Barcode</h1>
+        <button onClick={() => setVisible(true)}>Scan</button>
+        {visible && (
+          <BarcodeReader
+            facingMode="user"
+            onUpdate={async (err, result) => {
+              console.log("literally anything");
+              if (!err) {
+                setData(result.text);
+                setVisible(false);
+                const res = await axios.get(
+                  `https://api.discogs.com/database/search?barcode=${result.text}&key=vCufLsasVPLodegWeGhm&secret=xDeFGgerdGQhFdxSYnDKGLkuVTRjGBsh`
+                );
 
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
+                const srcUrl = res.data.results[0].master_url;
+                const imageRes = await axios.get(
+                  srcUrl +
+                    "?key=vCufLsasVPLodegWeGhm&secret=xDeFGgerdGQhFdxSYnDKGLkuVTRjGBsh"
+                );
+                const imageSrc = imageRes.data.images[0].uri;
+                const title = imageRes.data.title;
 
-        <div className="grid">
-          <a href="https://nextjs.org/docs" className="card">
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+                setList([...list, { title, src: imageSrc }]);
+              }
+            }}
+            // onUpdate={(err, result) => {
+            //   if (result) setData(result.text);
+            // }}
+            width={500}
+            height={500}
+          />
+        )}
 
-          <a href="https://nextjs.org/learn" className="card">
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className="card"
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="card"
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+        <div style={{ display: "flex", gap: 20 }}>
+          {list.map((nextAlbum) => {
+            return (
+              <div style={{ width: 200, height: 200, fontSize: 10 }}>
+                <img height={200} width={200} src={nextAlbum.src}></img>
+                <h1>{nextAlbum.title}</h1>
+              </div>
+            );
+          })}
         </div>
       </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel" className="logo" />
-        </a>
-      </footer>
 
       <style jsx>{`
         .container {
@@ -205,5 +229,5 @@ export default function Home() {
         }
       `}</style>
     </div>
-  )
+  );
 }
